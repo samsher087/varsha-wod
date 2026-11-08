@@ -69,12 +69,12 @@ const settingSchema = new mongoose.Schema(
     },
     headquartersAddress: {
       type: String,
-      default: 'Kusaiya, Giridih, Jharkhand',
+      default: 'Kanijari, Mandar Ranchi, Jharkhand',
     },
     socialLinks: {
-      instagram: { type: String, default: 'https://www.instagram.com/naju_rider_18/' },
-      youtube: { type: String, default: 'https://youtube.com/@najurider' },
-      facebook: { type: String, default: 'https://www.facebook.com/najurider18' },
+      instagram: { type: String, default: 'https://www.instagram.com/varsha_rider_18/' },
+      youtube: { type: String, default: 'https://www.youtube.com/@VarshaKispotta-ce9pj' },
+      facebook: { type: String, default: 'https://www.facebook.com/profile.php?id=61556212378205' },
     },
     razorpayKeyId: {
       type: String,

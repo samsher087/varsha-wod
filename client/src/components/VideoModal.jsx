@@ -1,46 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
   Heart,
   MessageCircle,
   Share2,
-  Music,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
   Send,
-  Sparkles,
   CheckCircle2,
-  Loader2,
-  AlertCircle,
+  Play,
 } from 'lucide-react';
-import { InstagramIcon, InstagramReelIcon, YoutubeIcon } from './SocialIcons';
+import { YoutubeIcon, InstagramIcon } from './SocialIcons';
 import { apiClient } from '../api/client';
 
-// Real authentic Well of Death stunt video mapping (Standard H.264 MP4)
-const STUNT_VIDEO_MAP = {
-  'dNe-WS6A9js': '/videos/yt_stunt_dNe-WS6A9js.mp4',
-  'De3MkanTRut': '/videos/stunt_wod_four_bikes.mp4',
-  'C-_kJq3SswG': '/videos/stunt_wod_solo_wall.mp4',
-  'DbMqwvYTQAZ': '/videos/stunt_wod_four_bikes.mp4',
-  'DchoxfoT2_E': '/videos/stunt_wod_solo_wall.mp4',
-  'C_t6cLeywFx': '/videos/stunt_wod_four_bikes.mp4',
-  'DcKnR5UTzh_': '/videos/stunt_wod_solo_wall.mp4',
-  '2u_iOzAG2qo': '/videos/yt_stunt_dNe-WS6A9js.mp4',
-  '5Sj8XVZDxFI': '/videos/stunt_wod_solo_wall.mp4',
-  'P3QQ9_MXBVc': '/videos/stunt_wod_four_bikes.mp4',
-  'fWLvQ59qq4k': '/videos/stunt_wod_solo_wall.mp4',
+export const extractYouTubeId = (url) => {
+  if (!url) return null;
+  const str = String(url).trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+  const shortsMatch = str.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i);
+  if (shortsMatch) return shortsMatch[1];
+  const watchMatch = str.match(/[?&]v=([a-zA-Z0-9_-]{11})/i);
+  if (watchMatch) return watchMatch[1];
+  const youtuBeMatch = str.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/i);
+  if (youtuBeMatch) return youtuBeMatch[1];
+  const embedMatch = str.match(/youtube(?:-nocookie)?\.com\/embed\/([a-zA-Z0-9_-]{11})/i);
+  if (embedMatch) return embedMatch[1];
+  return null;
 };
-
-const STUNT_VIDEO_STREAMS = [
-  '/videos/yt_stunt_dNe-WS6A9js.mp4',
-  '/videos/stunt_wod_four_bikes.mp4',
-  '/videos/stunt_wod_solo_wall.mp4',
-];
 
 export const VideoModal = ({
   isOpen,
@@ -49,30 +36,19 @@ export const VideoModal = ({
   videos = [],
   onSelectVideo,
 }) => {
-  const videoRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
-  const [progress, setProgress] = useState(0);
-  const [currentTime, setCurrentTime] = useState('0:00');
-  const [duration, setDuration] = useState('0:00');
-  const [showPlayIconAnim, setShowPlayIconAnim] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
-  const [showHeartBurst, setShowHeartBurst] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [copiedToast, setCopiedToast] = useState(false);
   const [showFullCaption, setShowFullCaption] = useState(false);
-  const [viewMode, setViewMode] = useState('player'); // 'player' (default auto-play) | 'embed'
-  const [fallbackOffset, setFallbackOffset] = useState(0);
-  const [isVideoLoading, setIsVideoLoading] = useState(true);
-  const [hasPlaybackError, setHasPlaybackError] = useState(false);
 
   const [comments, setComments] = useState([
     {
       id: 1,
       user: 'stunt_india_official',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
+      avatar:
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
       text: 'The centrifugal velocity here is insane! Defying physics at 88° incline 🔥🏍️',
       time: '2h ago',
       likes: 124,
@@ -80,7 +56,8 @@ export const VideoModal = ({
     {
       id: 2,
       user: 'delhi_speed_junkie',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80',
+      avatar:
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80',
       text: 'Bhai ka hands-free stunt dekh kar goosebumps aa gaye! Pure fearlessness 🙌',
       time: '4h ago',
       likes: 89,
@@ -88,7 +65,8 @@ export const VideoModal = ({
     {
       id: 3,
       user: 'royal_enfield_riders',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80',
+      avatar:
+        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80',
       text: '14+ years undefeated record speaks volumes. True legend of the wooden cylinder!',
       time: '1d ago',
       likes: 215,
@@ -99,120 +77,35 @@ export const VideoModal = ({
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex >= 0 && currentIndex < videos.length - 1;
 
-  // Detect YouTube vs Instagram external URL
-  const isYouTube = Boolean(
-    video?.youtubeUrl ||
-    (video?.instagramUrl && (video.instagramUrl.includes('youtube.com') || video.instagramUrl.includes('youtu.be'))) ||
-    (video?.videoUrl && (video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be')))
-  );
+  // Extract YouTube ID from videoUrl, youtubeUrl, or instagramUrl
+  const youtubeId =
+    extractYouTubeId(video?.videoUrl) ||
+    extractYouTubeId(video?.youtubeUrl) ||
+    extractYouTubeId(video?.instagramUrl) ||
+    '2u_iOzAG2qo';
+
+  const isDirectMp4 =
+    !youtubeId &&
+    video?.videoUrl &&
+    (video.videoUrl.endsWith('.mp4') || video.videoUrl.endsWith('.webm'));
 
   const externalMediaUrl =
-    video?.youtubeUrl ||
-    video?.instagramUrl ||
-    (video?.videoUrl && (video.videoUrl.includes('youtube.com') || video.videoUrl.includes('instagram.com')) ? video.videoUrl : null) ||
-    'https://www.youtube.com/shorts/dNe-WS6A9js';
+    (video?.youtubeUrl && video.youtubeUrl.includes('youtube.com'))
+      ? video.youtubeUrl
+      : (video?.videoUrl && (video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be')))
+      ? video.videoUrl
+      : `https://www.youtube.com/shorts/${youtubeId}`;
 
-  const ytMatch = externalMediaUrl.match(/(?:youtube\.com\/(?:shorts\/|watch\?v=)|youtu\.be\/)([^/?#&]+)/i);
-  const youtubeId = ytMatch ? ytMatch[1] : 'dNe-WS6A9js';
-
-  // Determine active video source for auto-play on this screen
-  const getPlayableStream = () => {
-    // If videoUrl is a direct local file path (e.g. /videos/yt_stunt_dNe-WS6A9js.mp4)
-    if (
-      video?.videoUrl &&
-      !video.videoUrl.includes('instagram.com') &&
-      !video.videoUrl.includes('youtube.com') &&
-      !video.videoUrl.includes('youtu.be') &&
-      (video.videoUrl.endsWith('.webm') ||
-        video.videoUrl.endsWith('.mp4') ||
-        video.videoUrl.startsWith('/videos/'))
-    ) {
-      return video.videoUrl;
-    }
-
-    // If YouTube ID match
-    if (isYouTube && youtubeId && STUNT_VIDEO_MAP[youtubeId]) {
-      return STUNT_VIDEO_MAP[youtubeId];
-    }
-
-    // Match based on Instagram post ID
-    const urlToParse = video?.instagramUrl || video?.videoUrl || '';
-    const match = urlToParse.match(/instagram\.com\/(?:p|reel|reels)\/([^/?#&]+)/i);
-    if (match && match[1] && STUNT_VIDEO_MAP[match[1]]) {
-      return STUNT_VIDEO_MAP[match[1]];
-    }
-
-    // Default fallback cycle
-    const idx = Math.max(0, currentIndex >= 0 ? currentIndex : 0);
-    return STUNT_VIDEO_STREAMS[(idx + fallbackOffset) % STUNT_VIDEO_STREAMS.length];
-  };
-
-  const activeVideoSrc = getPlayableStream();
-
-  // Reset states and auto-play on video change
   useEffect(() => {
     if (video) {
       setLikesCount(video.likes || 14300);
       setHasLiked(false);
-      setProgress(0);
-      setIsPlaying(true);
-      setShowFullCaption(false);
       setCommentsOpen(false);
-      setFallbackOffset(0);
-      setIsVideoLoading(true);
-      setHasPlaybackError(false);
-      setViewMode('player'); // Always default to auto-playing video player!
-
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0;
-        videoRef.current.muted = isMuted;
-        const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => setIsPlaying(true))
-            .catch((err) => {
-              console.warn('[VideoModal] Autoplay muted fallback:', err);
-              if (videoRef.current) {
-                videoRef.current.muted = true;
-                setIsMuted(true);
-                videoRef.current.play().catch(console.warn);
-              }
-            });
-        }
-      }
+      setShowFullCaption(false);
     }
   }, [video]);
 
-  // Load Meta Instagram embed script for optional web view
-  useEffect(() => {
-    if (viewMode === 'embed' && !isYouTube) {
-      if (window.instgrm) {
-        try {
-          window.instgrm.Embeds?.process();
-        } catch (e) {
-          console.warn('Instagram embed process error:', e);
-        }
-      } else {
-        const existingScript = document.getElementById('instagram-embed-script');
-        if (!existingScript) {
-          const script = document.createElement('script');
-          script.id = 'instagram-embed-script';
-          script.src = 'https://www.instagram.com/embed.js';
-          script.async = true;
-          script.onload = () => {
-            try {
-              window.instgrm?.Embeds?.process();
-            } catch (e) {
-              console.warn('Instagram embed onload error:', e);
-            }
-          };
-          document.body.appendChild(script);
-        }
-      }
-    }
-  }, [viewMode, video, isYouTube]);
-
-  // Keyboard navigation & playback controls
+  // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
 
@@ -223,11 +116,6 @@ export const VideoModal = ({
         } else {
           onClose();
         }
-      } else if (e.key === ' ' || e.code === 'Space') {
-        e.preventDefault();
-        togglePlay();
-      } else if (e.key === 'm' || e.key === 'M') {
-        toggleMute();
       } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         handleNext();
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
@@ -237,7 +125,7 @@ export const VideoModal = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, commentsOpen, video, videos, isPlaying, isMuted]);
+  }, [isOpen, commentsOpen, video, videos]);
 
   if (!isOpen || !video) return null;
 
@@ -253,84 +141,17 @@ export const VideoModal = ({
     }
   };
 
-  const togglePlay = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play().catch(console.warn);
-      setIsPlaying(true);
-    } else {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    }
-    setShowPlayIconAnim(true);
-    setTimeout(() => setShowPlayIconAnim(false), 650);
-  };
-
-  const toggleMute = () => {
-    if (!videoRef.current) return;
-    const nextMuted = !isMuted;
-    videoRef.current.muted = nextMuted;
-    setIsMuted(nextMuted);
-  };
-
-  const handleTimeUpdate = () => {
-    if (!videoRef.current) return;
-    const current = videoRef.current.currentTime;
-    const dur = videoRef.current.duration || 1;
-    setProgress((current / dur) * 100);
-
-    const format = (t) => {
-      const m = Math.floor(t / 60);
-      const s = Math.floor(t % 60);
-      return `${m}:${s < 10 ? '0' : ''}${s}`;
-    };
-    setCurrentTime(format(current));
-    if (dur && !isNaN(dur)) setDuration(format(dur));
-  };
-
-  const handleSeek = (e) => {
-    if (!videoRef.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pos = (e.clientX - rect.left) / rect.width;
-    videoRef.current.currentTime = pos * (videoRef.current.duration || 1);
-  };
-
-  const handleVideoError = () => {
-    console.warn('[VideoPlayer] Stream error for:', activeVideoSrc);
-    if (fallbackOffset < STUNT_VIDEO_STREAMS.length - 1) {
-      setFallbackOffset((prev) => prev + 1);
-      setIsVideoLoading(true);
-    } else {
-      setHasPlaybackError(true);
-      setIsVideoLoading(false);
-    }
-  };
-
   const handleLike = async () => {
     const nextLiked = !hasLiked;
     setHasLiked(nextLiked);
     setLikesCount((prev) => (nextLiked ? prev + 1 : prev - 1));
 
-    if (nextLiked) {
-      setShowHeartBurst(true);
-      setTimeout(() => setShowHeartBurst(false), 900);
+    if (nextLiked && video._id) {
       try {
-        if (video._id) {
-          await apiClient.post(`/videos/${video._id}/like`);
-        }
+        await apiClient.post(`/videos/${video._id}/like`);
       } catch (err) {
         console.warn('Like request failed:', err);
       }
-    }
-  };
-
-  const handleDoubleTap = (e) => {
-    e.stopPropagation();
-    if (!hasLiked) {
-      handleLike();
-    } else {
-      setShowHeartBurst(true);
-      setTimeout(() => setShowHeartBurst(false), 900);
     }
   };
 
@@ -346,7 +167,8 @@ export const VideoModal = ({
     const item = {
       id: Date.now(),
       user: 'you',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+      avatar:
+        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
       text: newComment.trim(),
       time: 'Just now',
       likes: 1,
@@ -362,9 +184,9 @@ export const VideoModal = ({
     >
       {/* Toast Notification */}
       {copiedToast && (
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[60] bg-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 animate-bounce">
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[60] bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 animate-bounce">
           <CheckCircle2 className="w-4 h-4" />
-          <span>{isYouTube ? 'YouTube link copied!' : 'Reel link copied!'}</span>
+          <span>YouTube link copied!</span>
         </div>
       )}
 
@@ -377,74 +199,47 @@ export const VideoModal = ({
         {hasPrev && (
           <button
             onClick={handlePrev}
-            className="hidden md:flex absolute -left-16 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-cyan-500 text-white items-center justify-center backdrop-blur-md border border-white/10 transition-all hover:scale-110 shadow-xl"
-            title="Previous Reel (Arrow Left)"
+            className="hidden md:flex absolute -left-16 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-amber-500 hover:text-black text-white items-center justify-center backdrop-blur-md border border-white/10 transition-all hover:scale-110 shadow-xl cursor-pointer"
+            title="Previous Stunt (Arrow Left)"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
         )}
 
-        {/* Central Vertical Reel Player - Plays Directly on this Screen */}
-        <div className="relative w-full max-w-[440px] sm:max-w-[480px] h-[92vh] max-h-[820px] bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-[0_0_60px_rgba(6,182,212,0.25)] flex flex-col justify-between">
-          
+        {/* Central Vertical Reel Player */}
+        <div className="relative w-full max-w-[460px] sm:max-w-[480px] h-[92vh] max-h-[820px] bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-[0_0_60px_rgba(229,9,20,0.3)] flex flex-col justify-between">
           {/* Universal Header with Controls */}
-          <div className="relative z-30 flex items-center justify-between px-4 py-3 text-white bg-gradient-to-b from-black/95 via-black/80 to-transparent border-b border-white/10 shrink-0">
+          <div className="relative z-30 flex items-center justify-between px-4 py-3 text-white bg-gradient-to-b from-black/95 via-black/85 to-transparent border-b border-white/10 shrink-0">
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setViewMode('player')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                  viewMode === 'player'
-                    ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
-                    : 'bg-white/10 text-slate-300 hover:text-white'
-                }`}
-                title="AutoPlay Video on this screen"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>AutoPlay Stunt</span>
-              </button>
-
-              <button
-                onClick={() => setViewMode(viewMode === 'embed' ? 'player' : 'embed')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-                  viewMode === 'embed'
-                    ? isYouTube
-                      ? 'bg-red-600 text-white'
-                      : 'bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 text-white'
-                    : 'bg-white/10 text-slate-300 hover:text-white'
-                }`}
-                title={isYouTube ? 'View YouTube Web Embed' : 'View Instagram Web Embed'}
-              >
-                {isYouTube ? (
-                  <YoutubeIcon className="w-3.5 h-3.5 text-red-500" />
-                ) : (
-                  <InstagramIcon className="w-3 h-3" />
-                )}
-                <span className="hidden sm:inline">{isYouTube ? 'YouTube Web' : 'Instagram Web'}</span>
-              </button>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-600 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-red-950/60">
+                <YoutubeIcon className="w-3.5 h-3.5 fill-current" />
+                <span>YouTube Stunt</span>
+              </div>
+              <span className="text-[11px] text-zinc-300 font-bold px-2 py-0.5 rounded-full bg-white/10 border border-white/10">
+                {video.category || 'Stunt Highlights'}
+              </span>
             </div>
 
             {/* Quick Action Buttons */}
             <div className="flex items-center gap-2">
-              {viewMode === 'player' && (
-                <button
-                  onClick={toggleMute}
-                  className="p-1.5 rounded-full bg-black/60 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-colors"
-                  title={isMuted ? 'Unmute (M)' : 'Mute (M)'}
-                >
-                  {isMuted ? (
-                    <VolumeX className="w-4 h-4 text-cyan-400" />
-                  ) : (
-                    <Volume2 className="w-4 h-4 text-emerald-400" />
-                  )}
-                </button>
-              )}
+              <a
+                href={externalMediaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-red-600 text-white text-xs font-semibold flex items-center gap-1 transition-colors"
+                title="Watch directly on YouTube"
+              >
+                <YoutubeIcon className="w-3.5 h-3.5 text-red-400 hover:text-white" />
+                <span className="hidden sm:inline">YouTube</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
 
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onClose();
                 }}
-                className="p-1.5 rounded-full bg-black/60 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-colors"
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
                 title="Close (Esc)"
               >
                 <X className="w-4 h-4" />
@@ -452,318 +247,39 @@ export const VideoModal = ({
             </div>
           </div>
 
-          {/* Central Body Container */}
+          {/* Central Body Container - Plays with YouTube URL */}
           <div className="relative flex-1 w-full bg-black flex flex-col justify-between overflow-hidden">
-            {viewMode === 'player' ? (
-              /* REAL AUTO-PLAYING VIDEO PLAYER ON THIS SCREEN */
-              <div
-                className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none"
-                onClick={togglePlay}
-                onDoubleClick={handleDoubleTap}
-              >
-                {/* HTML5 Video Element with AutoPlay - H.264 Baseline for 100% universal hardware playback */}
+            {youtubeId ? (
+              /* NATIVE YOUTUBE EMBED PLAYER PLAYING THE REAL YOUTUBE URL */
+              <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden select-none">
+                <iframe
+                  key={youtubeId}
+                  src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=0&controls=1&rel=0&loop=1&playlist=${youtubeId}&modestbranding=1&playsinline=1`}
+                  title={video.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="w-full h-full border-0"
+                />
+              </div>
+            ) : isDirectMp4 ? (
+              <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden">
                 <video
-                  ref={videoRef}
-                  src={activeVideoSrc}
-                  poster={
-                    video.thumbnailUrl ||
-                    'https://i.ytimg.com/vi/dNe-WS6A9js/hqdefault.jpg'
-                  }
+                  src={video.videoUrl}
+                  controls
                   autoPlay
                   loop
-                  muted={isMuted}
-                  playsInline
-                  onTimeUpdate={handleTimeUpdate}
-                  onLoadedData={() => setIsVideoLoading(false)}
-                  onCanPlay={() => setIsVideoLoading(false)}
-                  onError={handleVideoError}
-                  className="relative z-10 w-full h-full object-cover cursor-pointer"
+                  className="w-full h-full object-cover"
                 />
-
-                {/* Loading Spinner */}
-                {isVideoLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-black/40 backdrop-blur-[2px]">
-                    <div className="flex flex-col items-center gap-2">
-                      <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
-                      <span className="text-xs text-cyan-300 font-semibold tracking-wider">Loading Stunt Reel...</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Tap for Sound Floating Pill (when muted) */}
-                {isMuted && !isVideoLoading && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleMute();
-                    }}
-                    className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_25px_rgba(6,182,212,0.6)] backdrop-blur-md animate-bounce hover:scale-105 transition-transform"
-                    title="Tap to Unmute Stunt Audio"
-                  >
-                    <VolumeX className="w-4 h-4 text-slate-950 shrink-0" />
-                    <span>Tap for Sound</span>
-                    <Volume2 className="w-4 h-4 text-slate-950 shrink-0" />
-                  </button>
-                )}
-
-                {/* Play / Pause Animated Icon */}
-                {showPlayIconAnim && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                    <div className="w-20 h-20 rounded-full bg-black/70 backdrop-blur-md flex items-center justify-center text-white scale-110 transition-transform shadow-2xl">
-                      {isPlaying ? (
-                        <Play className="w-10 h-10 fill-white ml-1" />
-                      ) : (
-                        <Pause className="w-10 h-10 fill-white" />
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Double Tap Heart Burst Animation */}
-                {showHeartBurst && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                    <Heart className="w-28 h-28 text-rose-500 fill-rose-500 animate-ping opacity-90 drop-shadow-[0_0_20px_rgba(244,63,94,0.8)]" />
-                  </div>
-                )}
-
-                {/* Right Floating Action Column */}
-                <div
-                  className="absolute right-3 bottom-28 z-30 flex flex-col items-center gap-4.5"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Like Button */}
-                  <button
-                    onClick={handleLike}
-                    className="flex flex-col items-center gap-1 group focus:outline-none"
-                    title={hasLiked ? 'Unlike' : 'Like'}
-                  >
-                    <div
-                      className={`w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-200 ${
-                        hasLiked
-                          ? 'bg-rose-500 text-white scale-110 shadow-lg shadow-rose-500/50'
-                          : 'bg-black/55 text-white hover:bg-white/20 border border-white/10'
-                      }`}
-                    >
-                      <Heart
-                        className={`w-5 h-5 ${hasLiked ? 'fill-current' : ''}`}
-                      />
-                    </div>
-                    <span className="text-[11px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                      {likesCount.toLocaleString('en-IN')}
-                    </span>
-                  </button>
-
-                  {/* Comments Button */}
-                  <button
-                    onClick={() => setCommentsOpen(!commentsOpen)}
-                    className="flex flex-col items-center gap-1 group focus:outline-none"
-                    title="View Comments"
-                  >
-                    <div className="w-11 h-11 rounded-full bg-black/55 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white backdrop-blur-md transition-all duration-200">
-                      <MessageCircle className="w-5 h-5" />
-                    </div>
-                    <span className="text-[11px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                      {comments.length}
-                    </span>
-                  </button>
-
-                  {/* Share Button */}
-                  <button
-                    onClick={handleCopyLink}
-                    className="flex flex-col items-center gap-1 group focus:outline-none"
-                    title="Copy Link"
-                  >
-                    <div className="w-11 h-11 rounded-full bg-black/55 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white backdrop-blur-md transition-all duration-200">
-                      <Share2 className="w-5 h-5" />
-                    </div>
-                    <span className="text-[10px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                      Share
-                    </span>
-                  </button>
-
-                  {/* External Link Button (YouTube or Instagram) */}
-                  <a
-                    href={externalMediaUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-1 group"
-                    title={isYouTube ? 'Open on YouTube' : 'Open on Instagram'}
-                  >
-                    <div
-                      className={`w-11 h-11 rounded-full flex items-center justify-center text-white shadow-xl hover:scale-110 transition-transform ${
-                        isYouTube
-                          ? 'bg-red-600 shadow-red-950/40'
-                          : 'bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600'
-                      }`}
-                    >
-                      {isYouTube ? (
-                        <YoutubeIcon className="w-5 h-5 text-white" />
-                      ) : (
-                        <InstagramIcon className="w-5 h-5" />
-                      )}
-                    </div>
-                    <span
-                      className={`text-[10px] font-black drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] flex items-center gap-0.5 ${
-                        isYouTube ? 'text-red-300' : 'text-rose-300'
-                      }`}
-                    >
-                      {isYouTube ? 'YouTube ↗' : 'Insta ↗'}
-                    </span>
-                  </a>
-                </div>
-
-                {/* Bottom Overlay: Creator, Title, Description, Scrubber */}
-                <div
-                  className="absolute inset-x-0 bottom-0 z-20 p-4 pt-16 bg-gradient-to-t from-black via-black/85 to-transparent pointer-events-auto"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Author Row with Direct External Button */}
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2 truncate">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-teal-400 p-[1.5px] shrink-0">
-                        <img
-                          src="https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=100&q=80"
-                          alt="Varsha Rider"
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      </div>
-                      <div className="truncate">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-black text-white truncate">
-                            {video.authorHandle || '@naju_rider_18'}
-                          </span>
-                          <span className="w-3.5 h-3.5 rounded-full bg-cyan-500 text-white flex items-center justify-center text-[8px] font-bold">
-                            ✓
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-zinc-400 truncate">
-                          Well of Death Stunt Specialist
-                        </p>
-                      </div>
-                    </div>
-
-                    <a
-                      href={externalMediaUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`px-3 py-1 rounded-full text-white font-bold text-xs shadow-md transition-all hover:scale-105 shrink-0 flex items-center gap-1 ${
-                        isYouTube
-                          ? 'bg-red-600 hover:bg-red-500 shadow-red-950/40'
-                          : 'bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-400 hover:to-rose-400'
-                      }`}
-                    >
-                      {isYouTube ? (
-                        <YoutubeIcon className="w-3.5 h-3.5" />
-                      ) : (
-                        <InstagramIcon className="w-3 h-3" />
-                      )}
-                      <span>{isYouTube ? 'YouTube ↗' : 'Open on IG ↗'}</span>
-                    </a>
-                  </div>
-
-                  {/* Stunt Title */}
-                  <h3 className="text-sm font-bold text-white mb-1 leading-snug drop-shadow-md pr-14">
-                    {video.title}
-                  </h3>
-
-                  {/* Description with Expand Toggle */}
-                  {video.description && (
-                    <div className="text-xs text-zinc-300 mb-2 leading-relaxed pr-14">
-                      <p className={showFullCaption ? '' : 'line-clamp-2'}>
-                        {video.description}
-                      </p>
-                      {video.description.length > 80 && (
-                        <button
-                          onClick={() => setShowFullCaption(!showFullCaption)}
-                          className="text-cyan-400 font-bold hover:underline mt-0.5"
-                        >
-                          {showFullCaption ? 'less' : 'more'}
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Audio Track Tag */}
-                  <div className="flex items-center gap-1.5 text-[10px] text-zinc-300 mb-2 truncate">
-                    <Music className="w-3 h-3 text-cyan-400 shrink-0 animate-pulse" />
-                    <span className="truncate">
-                      {video.audioTrack || 'Original Audio - @naju_rider_18'}
-                    </span>
-                  </div>
-
-                  {/* Progress Scrub Bar */}
-                  <div className="flex items-center gap-2 pt-1 text-[10px] font-mono text-zinc-400">
-                    <span className="w-8">{currentTime}</span>
-                    <div
-                      onClick={handleSeek}
-                      className="relative flex-1 h-1.5 bg-white/20 rounded-full cursor-pointer overflow-hidden group"
-                    >
-                      <div
-                        className="h-full bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 rounded-full transition-all duration-75"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                    <span className="w-8 text-right">{duration}</span>
-                  </div>
-                </div>
               </div>
             ) : (
-              /* OPTIONAL WEB EMBED VIEW (YouTube or Instagram) */
-              <div className="relative z-10 flex-1 w-full h-full p-3 flex flex-col items-center justify-center bg-slate-950 overflow-hidden">
-                {isYouTube ? (
-                  /* NATIVE YOUTUBE EMBED PLAYER */
-                  <div className="relative w-full h-full max-h-[640px] rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black flex flex-col justify-between">
-                    <iframe
-                      src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=${isMuted ? 1 : 0}&loop=1&playlist=${youtubeId}&controls=1&rel=0`}
-                      title={video.title}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="w-full h-full border-0"
-                    />
-                  </div>
-                ) : (
-                  /* INSTAGRAM MEDIA EMBED */
-                  <div className="w-full max-w-[420px] mb-4">
-                    <blockquote
-                      key={externalMediaUrl}
-                      className="instagram-media"
-                      data-instgrm-captioned
-                      data-instgrm-permalink={externalMediaUrl}
-                      data-instgrm-version="14"
-                      style={{
-                        background: '#0c101c',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '20px',
-                        margin: '0 auto',
-                        maxWidth: '420px',
-                        width: '100%',
-                        minHeight: '260px',
-                      }}
-                    >
-                      <div className="p-5 flex flex-col items-center text-center">
-                        <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-4 shadow-2xl border border-white/10">
-                          <img
-                            src={video.thumbnailUrl || '/images/gallery/varsha_rider_rx100_arena.jpg'}
-                            alt={video.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <h3 className="text-sm font-bold text-white mb-2 leading-snug">
-                          {video.title}
-                        </h3>
-                        <a
-                          href={externalMediaUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xl"
-                        >
-                          <InstagramIcon className="w-4 h-4" />
-                          <span>Open on Instagram ↗</span>
-                        </a>
-                      </div>
-                    </blockquote>
-                  </div>
-                )}
+              <div className="relative w-full h-full flex items-center justify-center bg-black">
+                <iframe
+                  src="https://www.youtube-nocookie.com/embed/2u_iOzAG2qo?autoplay=1&mute=0&controls=1&rel=0"
+                  title="Stunt Reel"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="w-full h-full border-0"
+                />
               </div>
             )}
 
@@ -775,14 +291,14 @@ export const VideoModal = ({
               >
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <div className="flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-cyan-400" />
+                    <MessageCircle className="w-4 h-4 text-amber-400" />
                     <span className="text-xs font-bold text-white uppercase tracking-wider">
                       Comments ({comments.length})
                     </span>
                   </div>
                   <button
                     onClick={() => setCommentsOpen(false)}
-                    className="p-1 rounded-full text-zinc-400 hover:text-white"
+                    className="p-1 rounded-full text-zinc-400 hover:text-white cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -821,13 +337,13 @@ export const VideoModal = ({
                     type="text"
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment for Varsha Rider..."
-                    className="flex-1 bg-slate-900 border border-slate-800 rounded-full px-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-cyan-500"
+                    placeholder="Add a comment for the rider..."
+                    className="flex-1 bg-slate-900 border border-slate-800 rounded-full px-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
                   />
                   <button
                     type="submit"
                     disabled={!newComment.trim()}
-                    className="p-2 rounded-full bg-cyan-500 text-slate-950 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-cyan-400 transition-colors"
+                    className="p-2 rounded-full bg-amber-500 text-slate-950 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-amber-400 transition-colors cursor-pointer"
                   >
                     <Send className="w-3.5 h-3.5 ml-0.5" />
                   </button>
@@ -835,14 +351,66 @@ export const VideoModal = ({
               </div>
             )}
           </div>
+
+          {/* Bottom Bar: Video Title, Details, Action Buttons */}
+          <div className="relative z-30 px-4 py-3 bg-gradient-to-t from-black via-black/95 to-black/80 border-t border-white/10 shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-white truncate" title={video.title}>
+                  {video.title}
+                </h3>
+                {video.description && (
+                  <p className="text-xs text-zinc-400 truncate mt-0.5">
+                    {video.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleLike}
+                  className={`p-2 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+                    hasLiked
+                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                  title={hasLiked ? 'Unlike' : 'Like'}
+                >
+                  <Heart className={`w-3.5 h-3.5 ${hasLiked ? 'fill-current' : ''}`} />
+                  <span>{likesCount.toLocaleString('en-IN')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCommentsOpen(!commentsOpen)}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="Comments"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{comments.length}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs transition-all cursor-pointer"
+                  title="Copy YouTube Link"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Next Reel Button (Desktop) */}
         {hasNext && (
           <button
             onClick={handleNext}
-            className="hidden md:flex absolute -right-16 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-cyan-500 text-white items-center justify-center backdrop-blur-md border border-white/10 transition-all hover:scale-110 shadow-xl"
-            title="Next Reel (Arrow Right)"
+            className="hidden md:flex absolute -right-16 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-amber-500 hover:text-black text-white items-center justify-center backdrop-blur-md border border-white/10 transition-all hover:scale-110 shadow-xl cursor-pointer"
+            title="Next Stunt (Arrow Right)"
           >
             <ChevronRight className="w-6 h-6" />
           </button>

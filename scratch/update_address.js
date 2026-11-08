@@ -4,7 +4,7 @@ async function updateAddress() {
   await mongoose.connect('mongodb://127.0.0.1:27017/well_of_death');
   const res = await mongoose.connection.collection('settings').updateMany(
     {},
-    { $set: { headquartersAddress: 'Kusaiya, Giridih, Jharkhand' } }
+    { $set: { headquartersAddress: 'Kanijari, Mandar Ranchi, Jharkhand' } }
   );
   console.log('Updated settings in MongoDB:', res.modifiedCount);
   await mongoose.disconnect();

@@ -73,14 +73,14 @@ export const TrainingAcademyTeaser = () => {
                 key={s.num}
                 className="relative p-6 rounded-3xl bg-white/[0.08] backdrop-blur-2xl border border-white/20 hover:border-pink-300/60 transition-all duration-300 group hover:-translate-y-1 shadow-xl hover:shadow-pink-500/20 flex flex-col justify-between card-top-line overflow-hidden"
               >
-                {/* Background Stunt Image with 30% Opacity */}
+                {/* Background Rider Portrait Image */}
                 <div
-                  className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:scale-105 group-hover:opacity-40 transition-all duration-500 pointer-events-none"
-                  style={{ backgroundImage: `url('/images/naju_rider_stunt_rx100.jpg')` }}
+                  className="absolute inset-0 bg-cover bg-top opacity-35 group-hover:scale-105 group-hover:opacity-50 transition-all duration-500 pointer-events-none"
+                  style={{ backgroundImage: `url('/images/varsha_rider_portrait.jpg')` }}
                 />
 
                 {/* Subtle dark gradient overlay for optimal text readability */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#240417]/80 via-[#240417]/65 to-[#240417]/85 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#240417]/75 via-[#240417]/60 to-[#240417]/85 pointer-events-none" />
 
                 {/* Block Content */}
                 <div className="relative z-10">

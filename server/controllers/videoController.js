@@ -99,6 +99,67 @@ export const likePublicVideo = async (req, res) => {
   }
 };
 
+// @desc    Update public stunt video (Admin)
+// @route   PUT /api/videos/admin/:id
+export const updatePublicVideo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      category,
+      videoUrl,
+      thumbnailUrl,
+      duration,
+      description,
+      featured,
+      instagramUrl,
+      youtubeUrl,
+      audioTrack,
+      authorHandle,
+      isReel,
+      order,
+    } = req.body;
+
+    const video = await PublicVideo.findById(id);
+    if (!video) {
+      return res.status(404).json({ success: false, message: 'Video not found' });
+    }
+
+    if (title !== undefined) video.title = title;
+    if (category !== undefined) video.category = category;
+    if (videoUrl !== undefined) video.videoUrl = videoUrl;
+    if (thumbnailUrl !== undefined) video.thumbnailUrl = thumbnailUrl;
+    if (duration !== undefined) video.duration = duration;
+    if (description !== undefined) video.description = description;
+    if (featured !== undefined) video.featured = featured;
+    if (instagramUrl !== undefined) video.instagramUrl = instagramUrl;
+    if (youtubeUrl !== undefined) video.youtubeUrl = youtubeUrl;
+    if (audioTrack !== undefined) video.audioTrack = audioTrack;
+    if (authorHandle !== undefined) video.authorHandle = authorHandle;
+    if (isReel !== undefined) video.isReel = isReel;
+    if (order !== undefined) video.order = order;
+
+    await video.save();
+
+    await AdminAuditLog.create({
+      admin: req.user._id,
+      action: `Updated Stunt Video "${video.title}" (Video URL: ${video.videoUrl})`,
+      targetType: 'PublicVideo',
+      targetId: video._id.toString(),
+      ipAddress: req.ip || '',
+    });
+
+    res.json({
+      success: true,
+      message: 'Stunt video updated successfully',
+      video,
+    });
+  } catch (error) {
+    console.error('Error updating public video:', error);
+    res.status(500).json({ success: false, message: 'Failed to update video record' });
+  }
+};
+
 // @desc    Delete public video (Admin)
 // @route   DELETE /api/videos/admin/:id
 export const deletePublicVideo = async (req, res) => {

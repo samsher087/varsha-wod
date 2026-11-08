@@ -310,7 +310,7 @@ export const seedDatabase = async () => {
       {
         title: 'Vertical Wall Mastery: High-Speed Centrifugal Orbit',
         category: 'Stunt Highlights',
-        videoUrl: '/videos/yt_stunt_dNe-WS6A9js.mp4',
+        videoUrl: 'https://www.youtube.com/shorts/2u_iOzAG2qo',
         thumbnailUrl: 'https://i.ytimg.com/vi/2u_iOzAG2qo/hqdefault.jpg',
         duration: '0:30',
         description: 'Varsha Rider climbing the vertical wooden timber at peak RPM. Pure physics, balance, and zero margin for error. #VarshaRider #WellOfDeath #MautKaKuan',
@@ -328,10 +328,10 @@ export const seedDatabase = async () => {
       {
         title: 'Hands-Free 360° Wall Glide: Peak Centrifugal Balance ⚡',
         category: 'Live Performances',
-        videoUrl: '/videos/stunt_wod_solo_wall.mp4',
+        videoUrl: 'https://www.youtube.com/shorts/5Sj8XVZDxFI',
         thumbnailUrl: 'https://i.ytimg.com/vi/5Sj8XVZDxFI/hqdefault.jpg',
         duration: '0:45',
-        description: '',
+        description: 'Hands-free balance gliding along the upper wooden rim at 88 degrees vertical incline with extreme poise.',
         views: 198500,
         likes: 36200,
         commentsCount: 2150,
@@ -346,7 +346,7 @@ export const seedDatabase = async () => {
       {
         title: 'Twin Motorcycle Orbit: High-Speed Wall Cross-Over 🏍️🏍️',
         category: 'Tandem Stunts',
-        videoUrl: '/videos/stunt_wod_four_bikes.mp4',
+        videoUrl: 'https://www.youtube.com/shorts/P3QQ9_MXBVc',
         thumbnailUrl: 'https://i.ytimg.com/vi/P3QQ9_MXBVc/hqdefault.jpg',
         duration: '0:50',
         description: 'Two bikes orbiting inches apart at 88 degrees vertical tilt. Flawless timing and razor-sharp synchrony. #TandemRide #CentrifugalOrbit #VarshaRider',
@@ -364,7 +364,7 @@ export const seedDatabase = async () => {
       {
         title: 'Independence Day Special: Tiranga Stunt on the Wall 🇮🇳',
         category: 'Extreme Stunts',
-        videoUrl: '/videos/stunt_wod_solo_wall.mp4',
+        videoUrl: 'https://www.youtube.com/shorts/fWLvQ59qq4k',
         thumbnailUrl: 'https://i.ytimg.com/vi/fWLvQ59qq4k/hqdefault.jpg',
         duration: '1:00',
         description: 'Accelerating onto the high timber rim under extreme G-force. Precision throttle control in full action. #Daredevil #MautKaKuan #HighSpeed',
@@ -382,7 +382,7 @@ export const seedDatabase = async () => {
       {
         title: 'Spectator Point-of-View: Looking Down into the Maut Ka Kuan 🌀',
         category: 'Arena POV',
-        videoUrl: '/videos/yt_stunt_dNe-WS6A9js.mp4',
+        videoUrl: 'https://www.youtube.com/shorts/dNe-WS6A9js',
         thumbnailUrl: 'https://i.ytimg.com/vi/dNe-WS6A9js/hqdefault.jpg',
         duration: '0:08',
         description: 'The dizzying perspective from the gallery railing as bikes reach terminal centrifugal velocity. #POV #Vertigo #AdrenalineJunkie #NajuRider',
@@ -400,8 +400,8 @@ export const seedDatabase = async () => {
       {
         title: 'Carnival Night Showtime: Roaring Engines & Grand Arena Orbit 🎪',
         category: 'Live Shows',
-        videoUrl: '/videos/stunt_wod_solo_wall.mp4',
-        thumbnailUrl: '/images/gallery/varsha_rider_rx100_arena.jpg',
+        videoUrl: 'https://www.youtube.com/shorts/2u_iOzAG2qo',
+        thumbnailUrl: 'https://i.ytimg.com/vi/2u_iOzAG2qo/hqdefault.jpg',
         duration: '1:10',
         description: 'Under the fairground lights, thrilling thousands of spectators with fearless rhythm and balance. #FairgroundStunts #VarshaRiderSince2016',
         views: 103400,
@@ -440,11 +440,11 @@ export const seedDatabase = async () => {
     setting.contactEmail = 'contact@najurider.com';
     setting.contactPhone = '+91 7488405975';
     setting.contactWhatsApp = '+917488405975';
-    setting.headquartersAddress = 'Kusaiya, Giridih, Jharkhand';
+    setting.headquartersAddress = 'Kanijari, Mandar Ranchi, Jharkhand';
     setting.socialLinks = {
-      instagram: 'https://www.instagram.com/naju_rider_18/',
-      youtube: 'https://youtube.com/@najurider',
-      facebook: 'https://www.facebook.com/najurider18',
+      instagram: 'https://www.instagram.com/varsha_rider_18/',
+      youtube: 'https://www.youtube.com/@VarshaKispotta-ce9pj',
+      facebook: 'https://www.facebook.com/profile.php?id=61556212378205',
     };
     await setting.save();
     console.log('[Seeder] Site settings updated with Varsha Rider');

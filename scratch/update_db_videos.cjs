@@ -7,7 +7,7 @@ const newVideos = [
     order: 1,
     title: 'Vertical Wall Mastery: High-Speed Centrifugal Orbit',
     category: 'Stunt Highlights',
-    videoUrl: '/videos/yt_stunt_dNe-WS6A9js.mp4',
+    videoUrl: 'https://www.youtube.com/shorts/2u_iOzAG2qo',
     thumbnailUrl: 'https://i.ytimg.com/vi/2u_iOzAG2qo/hqdefault.jpg',
     duration: '0:30',
     description: 'Varsha Rider climbing the vertical wooden timber at peak RPM. Pure physics, balance, and zero margin for error. #VarshaRider #WellOfDeath #MautKaKuan',

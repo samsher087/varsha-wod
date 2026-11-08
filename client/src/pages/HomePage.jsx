@@ -216,10 +216,11 @@ export const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredVideos.map((video) => (
+            {featuredVideos.map((video, idx) => (
               <ReelCard
-                key={video._id}
+                key={video._id || idx}
                 video={video}
+                index={idx}
                 onWatch={(v) => setActiveVideo(v)}
               />
             ))}

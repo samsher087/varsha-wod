@@ -114,7 +114,7 @@ export const ContactPage = () => {
                     <div>
                       <h4 className="font-bold text-white">Compound Location</h4>
                       <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        {settings.headquartersAddress || 'Kusaiya, Giridih, Jharkhand'}
+                        {settings.headquartersAddress || 'Kanijari, Mandar Ranchi, Jharkhand'}
                       </p>
                     </div>
                   </div>

@@ -104,6 +104,20 @@ export const AdminDashboardPage = () => {
   const [isPublishingVideo, setIsPublishingVideo] = useState(false);
   const videoThumbInputRef = useRef(null);
 
+  // Editing Public Stunt Video state
+  const [editingVideo, setEditingVideo] = useState(null);
+  const [editVideoForm, setEditVideoForm] = useState({
+    title: '',
+    category: '',
+    videoUrl: '',
+    youtubeUrl: '',
+    instagramUrl: '',
+    thumbnailUrl: '',
+    duration: '',
+    description: '',
+  });
+  const [isUpdatingVideo, setIsUpdatingVideo] = useState(false);
+
   // Audit Logs
   const [auditLogs, setAuditLogs] = useState([]);
 
@@ -423,6 +437,44 @@ export const AdminDashboardPage = () => {
       setMsg({ type: 'error', text: err.message });
     } finally {
       setIsPublishingVideo(false);
+    }
+  };
+
+  // Start Editing Public Stunt Video
+  const handleStartEditVideo = (vid) => {
+    setEditingVideo(vid);
+    setEditVideoForm({
+      title: vid.title || '',
+      category: vid.category || 'Stunt Highlights',
+      videoUrl: vid.videoUrl || '',
+      youtubeUrl: vid.youtubeUrl || '',
+      instagramUrl: vid.instagramUrl || '',
+      thumbnailUrl: vid.thumbnailUrl || '',
+      duration: vid.duration || '0:45',
+      description: vid.description || '',
+    });
+  };
+
+  // Save Edited Public Stunt Video URL & Details
+  const handleSaveEditVideo = async (e) => {
+    e.preventDefault();
+    if (!editingVideo) return;
+    if (!editVideoForm.videoUrl) {
+      setMsg({ type: 'error', text: 'Stunt Video URL is required.' });
+      return;
+    }
+    try {
+      setIsUpdatingVideo(true);
+      const res = await apiClient.put(`/videos/admin/${editingVideo._id}`, editVideoForm);
+      setMsg({ type: 'success', text: res.message || 'Stunt Video URL and details updated successfully!' });
+      setPublicVideos((prev) =>
+        prev.map((v) => (v._id === editingVideo._id ? res.video || { ...v, ...editVideoForm } : v))
+      );
+      setEditingVideo(null);
+    } catch (err) {
+      setMsg({ type: 'error', text: err.message || 'Failed to update video record.' });
+    } finally {
+      setIsUpdatingVideo(false);
     }
   };
 
@@ -1614,18 +1666,61 @@ export const AdminDashboardPage = () => {
             {/* Public Video Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {publicVideos.map((vid) => (
-                <div key={vid._id} className="rounded-2xl bg-slate-900/90 border border-slate-800 card-top-line p-4 space-y-3">
-                  <div className="aspect-video bg-zinc-900 rounded-xl overflow-hidden relative">
-                    <img src={vid.thumbnailUrl} alt={vid.title} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h4 className="text-sm font-bold text-white line-clamp-1">{vid.title}</h4>
-                      <span className="text-[11px] text-cyan-400">{vid.category}</span>
+                <div key={vid._id} className="rounded-2xl bg-slate-900/90 border border-slate-800 card-top-line p-4 flex flex-col justify-between space-y-3">
+                  <div className="space-y-3">
+                    <div className="aspect-video bg-zinc-900 rounded-xl overflow-hidden relative group">
+                      <img src={vid.thumbnailUrl || '/images/gallery/varsha_rider_rx100_arena.jpg'} alt={vid.title} className="w-full h-full object-cover" />
+                      <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono text-zinc-300 border border-white/10">
+                        {vid.duration || '0:45'}
+                      </span>
                     </div>
+
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="text-sm font-bold text-white line-clamp-1">{vid.title}</h4>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 whitespace-nowrap">
+                          {vid.category}
+                        </span>
+                      </div>
+                      {vid.description && (
+                        <p className="text-[11px] text-zinc-400 line-clamp-2 mt-1">
+                          {vid.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Stunt Video URL Display */}
+                    <div className="p-2.5 rounded-xl bg-black/50 border border-amber-500/20 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
+                        Stunt Video URL
+                      </span>
+                      <p className="font-mono text-[11px] text-zinc-300 break-all select-all">
+                        {vid.videoUrl || 'No video URL set'}
+                      </p>
+                      {vid.youtubeUrl && (
+                        <p className="font-mono text-[10px] text-zinc-500 truncate">
+                          YT/Reel: {vid.youtubeUrl}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
                     <button
+                      type="button"
+                      onClick={() => handleStartEditVideo(vid)}
+                      className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-rose-500/20 hover:from-amber-500 hover:to-orange-500 text-amber-300 hover:text-black border border-amber-500/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                      title="Edit Stunt Video URL & Details"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      <span>Edit Video URL</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleDeleteVideo(vid._id)}
-                      className="p-1.5 text-zinc-500 hover:text-red-400 transition-colors"
+                      className="p-2 rounded-xl bg-red-500/10 text-zinc-400 hover:text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors cursor-pointer"
+                      title="Delete Video"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1633,6 +1728,152 @@ export const AdminDashboardPage = () => {
                 </div>
               ))}
             </div>
+
+            {/* Edit Stunt Video URL Modal */}
+            {editingVideo && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+                <div className="relative w-full max-w-xl rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 card-top-line shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+                        <Edit className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white">Edit Stunt Video URL</h3>
+                        <p className="text-xs text-zinc-400">Change video file URL, stream source, or metadata</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingVideo(null)}
+                      className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveEditVideo} className="space-y-4">
+                    <div>
+                      <label className="text-xs font-bold text-amber-400 block mb-1.5 uppercase tracking-wider">
+                        Stunt Video URL (Direct MP4 / WebM / Stream Source) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editVideoForm.videoUrl}
+                        onChange={(e) => setEditVideoForm({ ...editVideoForm, videoUrl: e.target.value })}
+                        placeholder="e.g. /videos/stunt_wod_solo_wall.mp4 or https://..."
+                        className="w-full px-4 py-2.5 rounded-xl bg-black/60 border border-amber-500/50 text-white font-mono text-xs focus:outline-none focus:border-amber-400 shadow-inner"
+                      />
+                      <p className="text-[11px] text-zinc-500 mt-1">
+                        Enter local path (e.g. <code>/videos/stunt_wod_solo_wall.mp4</code>) or direct external video URL.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-zinc-300 block mb-1">
+                        YouTube / Reel External URL
+                      </label>
+                      <input
+                        type="text"
+                        value={editVideoForm.youtubeUrl}
+                        onChange={(e) => setEditVideoForm({ ...editVideoForm, youtubeUrl: e.target.value })}
+                        placeholder="https://www.youtube.com/shorts/... or https://instagram.com/reel/..."
+                        className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-slate-700 text-white text-xs focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-zinc-300 block mb-1">Video Title *</label>
+                        <input
+                          type="text"
+                          required
+                          value={editVideoForm.title}
+                          onChange={(e) => setEditVideoForm({ ...editVideoForm, title: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-slate-700 text-white text-xs focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-zinc-300 block mb-1">Category</label>
+                        <select
+                          value={editVideoForm.category}
+                          onChange={(e) => setEditVideoForm({ ...editVideoForm, category: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-slate-700 text-white text-xs focus:outline-none focus:border-amber-500"
+                        >
+                          <option value="Stunt Highlights">Stunt Highlights</option>
+                          <option value="Live Performances">Live Performances</option>
+                          <option value="Tandem Stunts">Tandem Stunts</option>
+                          <option value="Extreme Stunts">Extreme Stunts</option>
+                          <option value="Arena POV">Arena POV</option>
+                          <option value="Behind the Scenes">Behind the Scenes</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-zinc-300 block mb-1">Duration</label>
+                        <input
+                          type="text"
+                          value={editVideoForm.duration}
+                          onChange={(e) => setEditVideoForm({ ...editVideoForm, duration: e.target.value })}
+                          placeholder="0:45"
+                          className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-slate-700 text-white text-xs focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-zinc-300 block mb-1">Thumbnail URL</label>
+                        <input
+                          type="text"
+                          value={editVideoForm.thumbnailUrl}
+                          onChange={(e) => setEditVideoForm({ ...editVideoForm, thumbnailUrl: e.target.value })}
+                          placeholder="https://... or /images/..."
+                          className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-slate-700 text-white text-xs focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-zinc-300 block mb-1">Description</label>
+                      <textarea
+                        rows={2}
+                        value={editVideoForm.description}
+                        onChange={(e) => setEditVideoForm({ ...editVideoForm, description: e.target.value })}
+                        className="w-full px-4 py-2 rounded-xl bg-black/40 border border-slate-700 text-white text-xs focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                      <button
+                        type="button"
+                        onClick={() => setEditingVideo(null)}
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isUpdatingVideo}
+                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-orange-950/40 flex items-center gap-2 cursor-pointer"
+                      >
+                        {isUpdatingVideo ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Saving URL...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Save Stunt Video URL</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

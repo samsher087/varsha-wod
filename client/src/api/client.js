@@ -556,6 +556,24 @@ const mockRouter = async (method, endpoint, body) => {
     return { success: true, message: 'Video published successfully', video: newVideo };
   }
 
+  if (path.startsWith('/videos/admin/') && method === 'PUT') {
+    const id = path.split('/')[3];
+    const index = store.videos.findIndex((v) => v._id === id);
+    if (index !== -1) {
+      store.videos[index] = {
+        ...store.videos[index],
+        ...body,
+      };
+      saveStorage('wod_videos', store.videos);
+      return {
+        success: true,
+        message: 'Stunt video updated successfully',
+        video: store.videos[index],
+      };
+    }
+    throw new Error('Video not found');
+  }
+
   if (path.startsWith('/videos/admin/') && method === 'DELETE') {
     const id = path.split('/')[3];
     store.videos = store.videos.filter((v) => v._id !== id);
